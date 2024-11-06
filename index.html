@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Foquito</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            padding: 20px;
+        }
+        #lightbulb {
+            width: 100px;
+            height: 150px;
+            background-color: gray;
+            border-radius: 50% 50% 0 0;
+            position: relative;
+            margin: 20px auto;
+            transition: background-color 0.3s, opacity 0.3s;
+        }
+        #lightbulb.on {
+            background-color: yellow; /* Color cuando el foquito está encendido */
+        }
+        #lightbulb.off {
+            background-color: gray; /* Color cuando el foquito está apagado */
+        }
+        #lightbulb:after {
+            content: '';
+            width: 40px;
+            height: 40px;
+            background-color: yellow;
+            border-radius: 50%;
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            transition: opacity 0.3s;
+        }
+        #slider {
+            width: 80%;
+            margin: 20px 0;
+        }
+        #sendButton {
+            padding: 15px 30px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        #sliderValue {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        #timeValue {
+            font-size: 24px;
+            margin: 20px 0; /* Espacio para el valor de tiempo */
+        }
+        #message {
+            font-size: 18px;
+            margin-top: 20px;
+        }
+        .success {
+            color: green; /* Color para el mensaje de éxito */
+        }
+        .error {
+            color: red; /* Color para el mensaje de error */
+        }
+    </style>
+</head>
+<body>
+    <h1>Control de Foquito</h1>
+    <div id="lightbulb" class="off"></div>
+    <div id="timeValue">Tiempo: 0.00 ms</div> <!-- Nuevo div para mostrar el tiempo -->
+    <input type="range" id="slider" min="0" max="100" value="0">
+    <div id="sliderValue">0%</div> <!-- Mostrar porcentaje del deslizador -->
+    <button id="sendButton">Enviar Dato</button>
+    <div id="message"></div> <!-- Mensaje de éxito -->
+
+    <script>
+        const slider = document.getElementById('slider');
+        const lightbulb = document.getElementById('lightbulb');
+        const sendButton = document.getElementById('sendButton');
+        const sliderValue = document.getElementById('sliderValue');
+        const message = document.getElementById('message');
+
+        slider.addEventListener('input', function() {
+            // Cambiar la opacidad del foquito según el valor del deslizador
+            const brightness = this.value;
+            sliderValue.textContent = `${brightness}%`; // Mostrar el porcentaje
+            if (brightness > 0) {
+                lightbulb.classList.add('on');
+                lightbulb.classList.remove('off');
+                lightbulb.style.opacity = brightness / 100; // Cambia la opacidad del foquito
+            } else {
+                lightbulb.classList.remove('on');
+                lightbulb.classList.add('off');
+                lightbulb.style.opacity = 0; // Apaga el foquito
+            }
+        });
+
+        sendButton.addEventListener('click', function() {
+            const value = slider.value;
+            fetch('/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ sliderValue: value }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                message.textContent = 'Dato enviado con éxito'; // Mensaje de éxito
+                message.className = 'success'; // Asignar clase de éxito
+                setTimeout(() => {
+                    message.textContent = ''; // Limpiar el mensaje después de 2 segundos
+                }, 2000);
+                
+                // Actualizar el tiempo mostrado en la interfaz
+                document.getElementById('timeValue').textContent = `Tiempo: ${data.timeValue.toFixed(2)} ms`; // Mostrar el tiempo en ms
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+                message.textContent = 'Error al enviar el dato'; // Mensaje de error
+                message.className = 'error'; // Asignar clase de error
+            });
+        });
+    </script>
+</body>
+</html>
+
